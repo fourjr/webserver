@@ -36,6 +36,7 @@ async def startup(request):
 
 @app.route('/debug', methods=['PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
+    '''Returns and prints to stdout a JSON object about the request'''
     debug_json = {
         'method':request.method,
         'url':request.url,
