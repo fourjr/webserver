@@ -34,7 +34,7 @@ async def startup(request):
 #         json.dump(obj=fmt, fp=fp, indent=4)
 #     return response.json({'complete': True, 'fails': fails, 'JSON file':})
 
-@app.route('/debug', methods=['PUT', 'POST', 'GET', 'DELETE'])
+@app.route('/debug', methods=['PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
     debug_json = {
         'method':request.method,
