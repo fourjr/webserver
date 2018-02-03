@@ -14,7 +14,7 @@ async def close_session(app, loop):
     app.session.close()
 
 @app.route('/')
-async def startup():
+async def startup(request):
     return response.text('Check this out here!')
 
 # @app.route('/cr-api-data', methods=['PUT'])
