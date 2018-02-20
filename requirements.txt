@@ -1,2 +1,5 @@
 Sanic
 aiohttp
+
+motor
+dnspython
