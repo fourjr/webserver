@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 app = Sanic(__name__)
 app.mongo = AsyncIOMotorClient(os.environ.get('mongo'))
 app.session = None
-
+.
 @app.listener('before_server_start')
 async def create_session(app, loop):
     '''Creates an aiohttp.ClientSession upon app connect'''
