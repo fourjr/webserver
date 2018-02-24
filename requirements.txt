@@ -3,3 +3,5 @@ aiohttp
 
 motor
 dnspython
+
+bs4
