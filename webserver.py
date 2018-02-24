@@ -10,18 +10,22 @@ app.session = None
 
 @app.listener('before_server_start')
 async def create_session(app, loop):
+    '''Creates an aiohttp.ClientSession upon app connect'''
     app.session = aiohttp.ClientSession(loop=loop)
 
 @app.listener('after_server_stop')
 async def close_session(app, loop):
+    '''Closes session upon app disconnect'''
     await app.session.close()
 
 @app.route('/')
 async def startup(request):
+    '''A / page, much like a ping'''
     return response.json({'hello':'hell'})
 
 @app.route('/cr/constants')
-async def constants(request):
+async def cr_constants(request):
+    '''Retrieve constants from cr-api-data'''
     output = {'source':'https://cr-api.github.io/cr-api-data'}
     urls = [
         'alliance_badges',
