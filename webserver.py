@@ -20,7 +20,7 @@ async def close_session(app, loop):
 async def startup(request):
     return response.json({'hello':'hell'})
 
-@app.route('/cr-constants')
+@app.route('/cr/constants')
 async def constants(request):
     output = {'source':'https://cr-api.github.io/cr-api-data'}
     urls = [
@@ -64,23 +64,22 @@ async def debug(request):
     print(debug_json)
     return response.json(debug_json)
 
-@app.route('/bots', methods=['POST'])
-async def post_bot(request):
-    '''For DBL support'''
-    if request.headers.get('user_agent') != 'DBL':
-        return response.json({'message':"You aren't DBL!"}, status=400)
+# @app.route('/bots', methods=['POST'])
+# async def post_bot(request):
+#     '''For DBL support'''
+#     if request.headers.get('user_agent') != 'DBL':
+#         return response.json({'message':"You aren't DBL!"}, status=400)
 
-    bot_id = request.json.get('bot')
-    collection = app.mongo.bots.bot_info
-    bot_info = await collection.find_one({'bot_id':bot_id})
+#     bot_id = request.json.get('bot')
+#     collection = app.mongo.bots.bot_info
+#     bot_info = await collection.find_one({'bot_id':bot_id})
 
-    if bot_info is None:
-        return response.json({'message':'Unregistered Bot'}, status=404)
+#     if bot_info is None:
+#         return response.json({'message':'Unregistered Bot'}, status=404)
 
-    if request.json.get('type') == 'upvote':
-        await collection.find_one_and_update({'$set':{request.json.get('user'):True}})
-    else:
-        await collection.find_one_and_delete({request.json.get('user'):True})
-
+#     if request.json.get('type') == 'upvote':
+#         await collection.find_one_and_update({'$set':{request.json.get('user'):True}})
+#     else:
+#         await collection.find_one_and_delete({request.json.get('user'):True})
 
 app.run(host="0.0.0.0", port=os.getenv('PORT'))
