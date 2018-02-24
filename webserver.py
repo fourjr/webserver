@@ -15,7 +15,10 @@ app.cr_constants = None
 async def update_constants():
     '''Updates constants for /cr/constants'''
     while not app.session.closed:
-        output = {'info':'This data is updated hourly.', 'source':'https://cr-api.github.io/cr-api-data'}
+        output = {
+            'info':'This data is updated hourly.',
+            'source':'https://cr-api.github.io/cr-api-data'
+        }
         async with app.session.get('https://www.github.com/cr-api/cr-api-data/tree/master/json') as resp:
             soup = BeautifulSoup(await resp.text(), 'html.parser')
 
