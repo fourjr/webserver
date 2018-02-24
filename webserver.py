@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 app = Sanic(__name__)
 app.mongo = AsyncIOMotorClient(os.environ.get('mongo'))
+app.session = None
 
 @app.listener('before_server_start')
 async def create_session(app, loop):
@@ -13,30 +14,40 @@ async def create_session(app, loop):
 
 @app.listener('after_server_stop')
 async def close_session(app, loop):
-    app.session.close()
+    await app.session.close()
 
 @app.route('/')
 async def startup(request):
-    return response.text('Check this out here!')
+    return response.json({'hello':'hell'})
 
-# @app.route('/cr-api-data', methods=['PUT'])
-# async def crapidata():
-#     await asyncio.sleep(240)
-#     urls = ['alliance_badges', 'arenas', 'cards', 'cards_stats', 'chest_order', 'clan_chest', 'game_modes', 'rarities', 'regions', 'tournaments', 'treasure_chests'] 
-#     fmt = {}
-#     fails = []
-#     for i in urls:
-#         async with app.session.get('https://cr-api.github.io/cr-api-data/json/' + i + '.json') as z:
-#             try:
-#                 fmt[i] = (await z.json(content_type='text/plain'))
-#             except:
-#                 fails.append(i)
+@app.route('/cr-constants')
+async def constants(request):
+    output = {'source':'https://cr-api.github.io/cr-api-data'}
+    urls = [
+        'alliance_badges',
+        'arenas',
+        'cards',
+        'cards_stats',
+        'challenges',
+        'chest_order',
+        'clan_chest',
+        'game_modes',
+        'rarities',
+        'regions',
+        'tournaments',
+        'treasure_chests'
+    ]
 
-#     with open('backup/clashroyale/constants.json', 'w+') as fp:
-#         json.dump(obj=fmt, fp=fp, indent=4)
-#     return response.json({'complete': True, 'fails': fails, 'JSON file':})
+    for i in urls:
+        async with app.session.get('https://cr-api.github.io/cr-api-data/json/' + i + '.json') as z:
+            try:
+                output[i] = await z.json()
+            except aiohttp.client_exceptions.ContentTypeError:
+                pass
 
-@app.route('/debug', methods=['PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
+    return response.json(output)
+
+@app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
     '''Returns and prints to stdout a JSON object about the request'''
     debug_json = {
