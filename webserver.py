@@ -19,6 +19,7 @@ async def update_constants():
             'info':'This data is updated hourly.',
             'source':'https://cr-api.github.io/cr-api-data'
         }
+
         async with app.session.get('https://www.github.com/cr-api/cr-api-data/tree/master/json') as resp:
             soup = BeautifulSoup(await resp.text(), 'html.parser')
 
