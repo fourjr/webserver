@@ -1,10 +1,11 @@
-import aiohttp
+import asyncio
 import json
 import os
-import asyncio
+
+import aiohttp
 from bs4 import BeautifulSoup
-from sanic import Sanic, response
 from motor.motor_asyncio import AsyncIOMotorClient
+from sanic import Sanic, response
 
 app = Sanic(__name__)
 app.mongo = AsyncIOMotorClient(os.environ.get('mongo'))
