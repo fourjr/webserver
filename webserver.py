@@ -51,7 +51,7 @@ async def update_constants():
 async def create_session(app, loop):
     '''Creates an aiohttp.ClientSession upon app connect'''
     app.session = aiohttp.ClientSession(loop=loop)
-    app.loop.create_task(update_constants())
+    loop.create_task(update_constants())
 
 @app.listener('after_server_stop')
 async def close_session(app, loop):
