@@ -10,17 +10,24 @@ from sanic import Sanic, response
 app = Sanic(__name__)
 app.mongo = AsyncIOMotorClient(os.environ.get('mongo'))
 app.session = None
-app.cr_constants = None
+app.constants = {'clashroyale':{}, 'brawlstars':{}}
 
-async def update_constants():
-    '''Updates constants for /cr/constants'''
+async def update_constants(mode):
+    '''Updates constants for /*/constants'''
+    if mode == 'brawlstars':
+        url = ['fourjr', 'bs-data']
+    elif mode == 'clashroyale':
+        url = ['cr-api', 'cr-api-data']
+    else:
+        raise NotImplementedError('Mode not implemented: ' + mode)
+
     while not app.session.closed:
         output = {
             'info':'This data is updated hourly.',
-            'source':'https://cr-api.github.io/cr-api-data'
+            'source':f'https://www.github.com/{url[0]}/{url[1]}'
         }
 
-        async with app.session.get('https://www.github.com/cr-api/cr-api-data/tree/master/json') as resp:
+        async with app.session.get(f'https://www.github.com/{url[0]}/{url[1]}/tree/master/json') as resp:
             soup = BeautifulSoup(await resp.text(), 'html.parser')
 
         urls = [
@@ -40,10 +47,10 @@ async def update_constants():
         ]
 
         for i in urls:
-            async with app.session.get('https://cr-api.github.io/cr-api-data/json/' + i) as z:
+            async with app.session.get(f'https://{url[0]}.github.io/{url[1]}/json/' + i) as z:
                 output[i.replace('.json', '')] = await z.json()
 
-        app.constants = output
+        app.constants[mode] = output
 
         await asyncio.sleep(3600)
 
@@ -51,7 +58,8 @@ async def update_constants():
 async def create_session(app, loop):
     '''Creates an aiohttp.ClientSession upon app connect'''
     app.session = aiohttp.ClientSession(loop=loop)
-    loop.create_task(update_constants())
+    loop.create_task(update_constants('clashroyale'))
+    loop.create_task(update_constants('brawlstars'))
 
 @app.listener('after_server_stop')
 async def close_session(app, loop):
@@ -66,7 +74,12 @@ async def startup(request):
 @app.route('/cr/constants')
 async def cr_constants(request):
     '''Retrieve constants from cr-api-data'''
-    return response.json(app.constants)
+    return response.json(app.constants['clashroyale'])
+
+@app.route('/bs/constants')
+async def bs_constants(request):
+    '''Retrieve constants from bs-data'''
+    return response.json(app.constants['brawlstars'])
 
 @app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
