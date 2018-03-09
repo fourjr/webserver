@@ -1,16 +1,40 @@
 import asyncio
 import json
 import os
+import copy
+import time
+import random
+import datetime
+from collections import Counter
 
 import aiohttp
+import clashroyale
 from bs4 import BeautifulSoup
 from motor.motor_asyncio import AsyncIOMotorClient
 from sanic import Sanic, response
 
+try:
+    with open('config.json') as f:
+        os.environ = json.load(f)
+        os.environ['data']
+except (FileNotFoundError, KeyError):
+    pass
+
 app = Sanic(__name__)
-app.mongo = AsyncIOMotorClient(os.environ.get('mongo'))
+app.mongo = None
+app.cr_meta_mongo = None
+app.cr_client = None
 app.session = None
+app.tags = {}
 app.constants = {'clashroyale':{}, 'brawlstars':{}}
+app.storage = {
+    'help': [
+        'This system is implemented for endpoints that is system intensive',
+        'You can use this by going to https://fourjr-webserver.herokuapp.com/status/<status_number>',
+        'Endpoints like /cr/cr-arena-meta will use this system',
+        'Typically there will be a link to this endpoint (/status) so you will not need to memorise any of this'
+    ]
+}
 
 async def update_constants(mode):
     '''Updates constants for /*/constants'''
@@ -38,7 +62,7 @@ async def update_constants(mode):
             soup.find('div', attrs={'class':'application-main '})\
                 .find('div', attrs={'class':'', 'itemtype':'http://schema.org/SoftwareSourceCode'})\
                 .find('div')\
-                .find('div', attrs={'class':'container new-discussion-timeline experiment-repo-nav '})\
+                .find('div', attrs={'class':'container new-discussion-timeline experiment-repo-nav '})
                 .find('div', attrs={'class':'repository-content '})\
                 .find('div', attrs={'class':'file-wrap'})\
                 .find('table', attrs={'class':'files js-navigation-container js-active-navigation-container'})\
@@ -54,12 +78,50 @@ async def update_constants(mode):
 
         await asyncio.sleep(3600)
 
+async def update_tags(once=False):
+    while not app.session.closed:
+        app.tags = await app.cr_meta_mongo.config.find({'name':'tags'}).to_list(None)
+        print('Server tags reloaded')
+        if once:
+            break
+        await asyncio.sleep(3600)
+
+def get_current_time(utc=True):
+    if utc:
+        current = datetime.datetime.utcnow()
+    else:
+        current = datetime.datetime.now()
+    return current.strftime('%Y-%m-%dT%H:%M:%S/%f')
+
+def get_random_status():
+    status = 'help'
+    while status in app.storage:
+        status = random.randint(1, 99999)
+    return status
+
+def authentication(func):
+    def decorator(request, **kwargs):
+        if request.headers.get('Authorization') != 'Bearer ' + os.environ.get('auth'):
+            pass#return response.json({'error':True, 'message':'Unauthorised'}, status=401)
+    return decorator
+
 @app.listener('before_server_start')
 async def create_session(app, loop):
     '''Creates an aiohttp.ClientSession upon app connect'''
     app.session = aiohttp.ClientSession(loop=loop)
+
+    app.cr_client = clashroyale.Client(
+        os.environ.get('clashroyale'),
+        is_async=True,
+        timeout=10,
+        session=app.session
+    )
+
+    app.mongo = AsyncIOMotorClient(os.environ.get('mongo'), io_loop=loop)
+    app.cr_meta_mongo = AsyncIOMotorClient(os.environ.get('mongo2'), io_loop=loop).cr_arena_meta
     loop.create_task(update_constants('clashroyale'))
     loop.create_task(update_constants('brawlstars'))
+    loop.create_task(update_tags())
 
 @app.listener('after_server_stop')
 async def close_session(app, loop):
@@ -71,10 +133,144 @@ async def startup(request):
     '''A / page, much like a ping'''
     return response.json({'hello':'world'})
 
+@app.route('/status')
+async def show_help_status(requst):
+    return response.json({'error':False, 'status':'help', 'data':app.storage['help']})
+
+@app.route('/status/<status>')
+async def get_status(request, status):
+    '''Makes use of app.storage to get status'''
+    try:
+        status = int(status)
+        entry = app.storage[status]
+    except (ValueError, KeyError):
+        return response.json({'error':True, 'status':status, 'message':'Invalid status'})
+
+    return response.json({'error':False, 'status':status, 'data':entry})
+
+
 @app.route('/cr/constants')
 async def cr_constants(request):
     '''Retrieve constants from cr-api-data'''
     return response.json(app.constants['clashroyale'])
+
+@app.route('/cr/cr-arena-meta')
+async def modify_tag(request):
+    '''Modifes tag in the cr-arena-meta database'''
+    params = request.raw_args
+    if 'type' not in params and 'tag' not in params:
+        return response.json({'error':True, 'message':'`type` and `tag` are to be included in querystrings.'}, status=400)
+
+    # CHECK TAG
+    params['tag'] = params['tag'].strip('#').upper().replace('O', '0')
+    if any(i not in 'PYLQGRJCUV0289' for i in params['tag']):
+        return response.json({'error':True, 'message':'Invalid tag'})
+
+    if len(app.tags) == 0:
+        return response.json({'error':True, 'message':'Server not ready yet. Give us a minute.'}, status=503)
+
+    collection = app.cr_meta_mongo.config
+
+    if params['type'] == 'player':
+        for i in app.tags:
+            if params['tag'] in i['data']:
+                return response.json({'error':False, 'message':'Tag already exists'})
+
+        if len(app.tags[-1]['data']) != 500000:
+            app.tags[-1]['data'].append(params['tag'])
+            await collection.find_one_and_replace({'id':app.tags[-1]['id']}, app.tags[-1])
+        else:
+            await collection.insert_one(
+                {
+                    'name':'tags',
+                    'id':app.tags[-1]['id']+1,
+                    'data':[
+                        params['tag']
+                    ]
+                }
+            )
+
+        return response.json({'error':False, 'message':'Added tag.'})
+
+    elif params['type'] == 'clan':
+        try:
+            clan = await app.cr_client.get_clan(params['tag'], keys='members')
+        except clashroyale.RequestError:
+            return response.json({'error':True, 'message':'RoyaleAPI is currently down.'}, status=504)
+
+        input_tags = [i.tag for i in clan.members]
+
+        for i in app.tags:
+            input_tags = list((Counter(input_tags) - Counter(i['data'])).elements())
+
+        a = copy.copy(app.tags[-1])
+        if len(app.tags[-1]['data']) < 500000 - len(input_tags):
+            app.tags[-1]['data'] += input_tags
+            await collection.find_one_and_replace({'id':app.tags[-1]['id']}, app.tags[-1])
+
+        else:
+            await collection.insert_one(
+                {
+                    'name':'tags',
+                    'id':app.tags[-1]['id'] + 1,
+                    'data':input_tags
+                }
+            )
+
+        return response.json({'error':False, 'message':f'Added {len(input_tags)} tags.'})
+
+async def cr_clear_duplicates(status):
+    try:
+        collection = app.cr_meta_mongo.config
+        async def add_to_db(index, i):
+            await collection.insert_one({'name':'tags', 'id':index, 'data':data[i:i+500000]})
+
+        start_time = time.time()
+
+        # await update_tags(once=True)
+        app.storage[status][get_current_time()] = 'Tags fully updated locally'
+        data = []
+        for i in app.tags:
+            data += i['data']
+        print(len(app.tags))
+        initial_data = len(data)
+        print(data[0])
+        print(initial_data)
+        data = list(set(data))
+        print(len(data))
+        app.storage[status][get_current_time()] = 'Duplicates cleared locally, database to pushing begin'
+
+        await collection.delete_many({'name':'tags'})
+        for index, i in enumerate(range(0, len(data), 500000)):
+            app.loop.create_task(add_to_db(index, i))
+        print(index)
+
+        app.storage[status][get_current_time()] = 'Dupe clearing completed {} tags removed.'.format(str(initial_data - len(data)))
+        await asyncio.sleep(0.3)
+        app.storage[status][get_current_time()] = f'Operation took a total of {time.time() - start_time}s'
+    except Exception as e:
+        app.storage[status][get_current_time()] = 'ERROR! Operation terminated'
+        app.storage[status]['error'] = e
+
+@authentication
+@app.route('/cr/duplicates')
+async def cr_duplicates(request):
+    '''Clear duplicates'''
+    status = get_random_status()
+
+    app.storage[status] = {
+        get_current_time(): 'Clearing of duplicates begin'
+    }
+
+    app.loop.create_task(cr_clear_duplicates(status))
+
+    return response.json(
+        {
+            'error': False,
+            'message': 'Clearing, check your status with the following url',
+            'status': f'http://{request.headers["host"]}/status/{status}'
+        }
+    )
 
 @app.route('/bs/constants')
 async def bs_constants(request):
