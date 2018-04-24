@@ -39,9 +39,50 @@ app.storage = {
 async def update_constants(mode):
     '''Updates constants for /*/constants'''
     if mode == 'brawlstars':
-        url = ['fourjr', 'bs-data']
+        url = [
+            'fourjr',
+            'bs-data',
+            [
+                'alliance_badges.json',
+                'alliance_roles.json',
+                'area_effects.json',
+                'bosses.json',
+                'campaign.json',
+                'cards.json',
+                'characters.json',
+                'globals.json',
+                'items.json',
+                'locations.json',
+                'maps.json',
+                'pins.json',
+                'player_thumbnails.json',
+                'projectiles.json',
+                'regions.json',
+                'resources.json',
+                'skills.json',
+                'skins.json',
+                'tiles.json',
+            ]
+        ]
     elif mode == 'clashroyale':
-        url = ['cr-api', 'cr-api-data']
+        url = [
+            'cr-api',
+            'cr-api-data',
+            [
+                'alliance_badges.json',
+                'arenas.json',
+                'cards.json',
+                'cards_stats.json',
+                'challenges.json',
+                'chest_order.json',
+                'clan_chest.json',
+                'game_modes.json',
+                'rarities.json',
+                'regions.json',
+                'tournaments.json',
+                'treasure_chests.json',
+            ]
+        ]
     else:
         raise NotImplementedError('Mode not implemented: ' + mode)
 
@@ -51,28 +92,9 @@ async def update_constants(mode):
             'source':f'https://www.github.com/{url[0]}/{url[1]}'
         }
 
-        async with app.session.get(f'https://www.github.com/{url[0]}/{url[1]}/tree/master/json') as resp:
-            soup = BeautifulSoup(await resp.text(), 'html.parser')
-
-        urls = [
-            i.find('td', attrs={'class':'content'})\
-                .find('span')\
-                .find('a')['title']
-            for i in
-            soup.find('div', attrs={'class':'application-main '})\
-                .find('div', attrs={'class':'', 'itemtype':'http://schema.org/SoftwareSourceCode'})\
-                .find('div')\
-                .find('div', attrs={'class':'container new-discussion-timeline experiment-repo-nav '})
-                .find('div', attrs={'class':'repository-content '})\
-                .find('div', attrs={'class':'file-wrap'})\
-                .find('table', attrs={'class':'files js-navigation-container js-active-navigation-container'})\
-                .find('tbody')\
-                .find_all('tr', attrs={'class':'js-navigation-item'})
-        ]
-
-        for i in urls:
-            async with app.session.get(f'https://{url[0]}.github.io/{url[1]}/json/' + i) as z:
-                output[i.replace('.json', '')] = await z.json()
+        for i in url[2]:
+            async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
+                output[i.replace('.json', '')] = await z.json(content_type='text/plain')
 
         app.constants[mode] = output
 
