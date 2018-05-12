@@ -316,6 +316,27 @@ async def debug(request):
     print(debug_json)
     return response.json(debug_json)
 
+@app.route('/redirect')
+async def redirect(request):
+    return response.redirect(request.raw_args['url'])
+
+@app.route('/postman', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
+async def postman(request):
+    try:
+        headers = {h.split(':')[0].strip(): h.split(':')[1].strip() for h in request.raw_args['headers'].split('|')}
+    except KeyError:
+       headers = {}
+
+    async with app.session.request(request.method, request.raw_args['url'], headers=headers) as resp:
+        try:
+            return response.json(await resp.json())
+        except json.JSONDecodeError:
+            try:
+                return response.text(await resp.text())
+            except UnicodeDecodeError:
+                return response.raw(await resp.read())
+            
+
 # @app.route('/bots', methods=['POST'])
 # async def post_bot(request):
 #     '''For DBL support'''
