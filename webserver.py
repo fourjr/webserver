@@ -330,7 +330,7 @@ async def postman(request):
     async with app.session.request(request.method, request.raw_args['url'], headers=headers) as resp:
         try:
             return response.json(await resp.json())
-        except json.JSONDecodeError:
+        except aiohttp.client_exceptions.ContentTypeError:
             try:
                 return response.text(await resp.text())
             except UnicodeDecodeError:
