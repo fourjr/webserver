@@ -322,7 +322,7 @@ async def statsy_dbl(request):
         if request.json.get('user') not in app.voted:
             app.voted.append(request.json.get('user'))
             async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
-                return response.json({'status': resp.status}, status=200)
+                return response.json({'status': resp.status}, status=resp.status)
         else:
             return response.json({'status': 'you already did this'}, status=400)
     else:
