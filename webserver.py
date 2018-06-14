@@ -322,6 +322,27 @@ async def statsy_dbl(request):
         async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
             return response.json({'status': resp.status}, status=resp.status)
 
+@app.route('/redirect')
+async def redirect(request):
+    return response.redirect(request.raw_args['url'])
+
+@app.route('/postman', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
+async def postman(request):
+    try:
+        headers = {h.split(':')[0].strip(): h.split(':')[1].strip() for h in request.raw_args['headers'].split('|')}
+    except KeyError:
+       headers = {}
+
+    async with app.session.request(request.method, request.raw_args['url'], headers=headers) as resp:
+        try:
+            return response.json(await resp.json())
+        except aiohttp.client_exceptions.ContentTypeError:
+            try:
+                return response.text(await resp.text())
+            except UnicodeDecodeError:
+                return response.raw(await resp.read())
+            
+
 # @app.route('/bots', methods=['POST'])
 # async def post_bot(request):
 #     '''For DBL support'''
