@@ -350,7 +350,7 @@ async def postman(request):
 
 @app.route('/statuscode', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def status(request):
-    return response.json({'im': 'fine'}, status=int(request.raw_args['status']))
+    return response.text(None, status=int(request.raw_args['status']))
 
 # @app.route('/bots', methods=['POST'])
 # async def post_bot(request):
