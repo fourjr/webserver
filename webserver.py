@@ -348,7 +348,7 @@ async def postman(request):
             except UnicodeDecodeError:
                 return response.raw(await resp.read())
 
-@app.route('/status', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
+@app.route('/statuscode', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def status(request):
     return response.json({'im': 'fine'}, status=request.raw_args['status'])
 
