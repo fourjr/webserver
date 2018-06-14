@@ -316,6 +316,12 @@ async def debug(request):
     print(debug_json)
     return response.json(debug_json)
 
+@app.route('/statsy', methods=['POST'])
+async def statsy_dbl(request):
+    if request.headers.get('Authorization') == os.getenv('statsyauth'):
+        async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
+            return response.json({'status': resp.status}, status=resp.status)
+
 # @app.route('/bots', methods=['POST'])
 # async def post_bot(request):
 #     '''For DBL support'''
