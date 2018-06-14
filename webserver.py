@@ -25,6 +25,7 @@ app.mongo = None
 app.cr_meta_mongo = None
 app.cr_client = None
 app.session = None
+app.voted = []
 app.tags = {}
 app.constants = {'clashroyale':{}, 'brawlstars':{}}
 app.storage = {
@@ -319,8 +320,14 @@ async def debug(request):
 @app.route('/statsy', methods=['POST'])
 async def statsy_dbl(request):
     if request.headers.get('Authorization') == os.getenv('statsyauth'):
-        async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
-            return response.json({'status': resp.status}, status=resp.status)
+        if request.json.get('user') not in app.voted:
+            app.voted.append(request.json.get('user'))
+            async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
+                return response.json({'status': resp.status}, status=resp.status)
+        else:
+            return response.json({'status': 'you already did this'}, status=400)
+    else:
+        return response.json({'message': 'stop trying'}, statius=400)
 
 @app.route('/redirect')
 async def redirect(request):
