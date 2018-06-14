@@ -226,7 +226,6 @@ async def modify_tag(request):
         for i in app.tags:
             input_tags = list((Counter(input_tags) - Counter(i['data'])).elements())
 
-        a = copy.copy(app.tags[-1])
         if len(app.tags[-1]['data']) < 500000 - len(input_tags):
             app.tags[-1]['data'] += input_tags
             await collection.find_one_and_replace({'id':app.tags[-1]['id']}, app.tags[-1])
@@ -323,7 +322,7 @@ async def statsy_dbl(request):
         if request.json.get('user') not in app.voted:
             app.voted.append(request.json.get('user'))
             async with app.session.post(os.getenv('statsyhook'), json={'content': request.json.get('user')}) as resp:
-                return response.json({'status': resp.status}, status=resp.status)
+                return response.json({'status': resp.status}, status=200)
         else:
             return response.json({'status': 'you already did this'}, status=400)
     else:
