@@ -347,7 +347,10 @@ async def postman(request):
                 return response.text(await resp.text())
             except UnicodeDecodeError:
                 return response.raw(await resp.read())
-            
+
+@app.route('/status', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
+async def status(request):
+    return response.json({'im': 'fine'}, status=request.raw_args['status'])
 
 # @app.route('/bots', methods=['POST'])
 # async def post_bot(request):
