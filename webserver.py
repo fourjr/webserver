@@ -352,22 +352,32 @@ async def postman(request):
 async def status(request):
     return response.text(None, status=int(request.raw_args['status']))
 
-# @app.route('/bots', methods=['POST'])
-# async def post_bot(request):
-#     '''For DBL support'''
-#     if request.headers.get('user_agent') != 'DBL':
-#         return response.json({'message':"You aren't DBL!"}, status=400)
-
-#     bot_id = request.json.get('bot')
-#     collection = app.mongo.bots.bot_info
-#     bot_info = await collection.find_one({'bot_id':bot_id})
-
-#     if bot_info is None:
-#         return response.json({'message':'Unregistered Bot'}, status=404)
-
-#     if request.json.get('type') == 'upvote':
-#         await collection.find_one_and_update({'$set':{request.json.get('user'):True}})
-#     else:
-#         await collection.find_one_and_delete({request.json.get('user'):True})
+@app.route('/zanata', methods=['POST'])
+async def zanata(request):
+    if request.json['type'] == 'DocumentMilestoneEvent':
+        embed = {
+            'title': request.json['milestone'],
+            'type': 'rich',
+            'description': 'Language: ' + request.json['locale'] + '\n' + 'Version: ' + request.json['version'],
+            'color': 0x22ee5b
+        }
+    elif request.json['type'] == 'DocumentStatsEvent':
+        embed = {
+            'title': f'{request.json["username"]} updated {request.json["locale"]}',
+            'type': 'rich',
+            'description': 'Version: ' + request.json['version']
+            'color': 0xd990e9
+        }
+    elif request.json['type'] == 'SourceDocumentChangedEvent':
+        embed = {
+            'title': 'Documents added',
+            'type': 'rich',
+            'description': 'Version: ' + request.json['version'],
+            'color': 0x56beee
+        }
+    else:
+        return response.json({'status': 'invalid type'}, status=400)
+    await app.session.post(os.getenv('zanatahook'), json=embed)
+    return response.json(None, status=204)
 
 app.run(host="0.0.0.0", port=os.getenv('PORT'))
