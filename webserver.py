@@ -365,7 +365,7 @@ async def zanata(request):
         embed = {
             'title': f'{request.json["username"]} updated {request.json["locale"]}',
             'type': 'rich',
-            'description': 'Version: ' + request.json['version']
+            'description': 'Version: ' + request.json['version'],
             'color': 0xd990e9
         }
     elif request.json['type'] == 'SourceDocumentChangedEvent':
