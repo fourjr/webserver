@@ -35,25 +35,39 @@ async def update_constants(mode, once=False):
             'fourjr',
             'bs-data',
             [
-                'alliance_badges.json',
-                'alliance_roles.json',
-                'area_effects.json',
-                'bosses.json',
-                'campaign.json',
-                'cards.json',
-                'characters.json',
-                'globals.json',
-                'items.json',
-                'locations.json',
-                'maps.json',
-                'pins.json',
-                'player_thumbnails.json',
-                'projectiles.json',
-                'regions.json',
-                'resources.json',
-                'skills.json',
-                'skins.json',
-                'tiles.json',
+                "billing_packages.json",
+                "client_globals.json",
+                "credits.json",
+                "effects.json",
+                "faces.json",
+                "health_bars.json",
+                "hints.json",
+                "music.json",
+                "particle_emitters.json",
+                "sounds.json",
+                "tutorial.json",
+                "animations.json",
+                "area_effects.json",
+                "bosses.json",
+                "campaign.json",
+                "cards.json",
+                "characters.json",
+                "globals.json",
+                "items.json",
+                "locales.json",
+                "locations.json",
+                "map_blocks.json",
+                "maps.json",
+                "pins.json",
+                "player_thumbnails.json",
+                "projectiles.json",
+                "regions.json",
+                "resources.json",
+                "skills.json",
+                "skins.json",
+                "tiles.json",
+                "alliance_badges.json",
+                "alliance_roles.json"
             ]
         ]
     elif mode == 'clashroyale':
@@ -236,6 +250,35 @@ async def postman(request):
 @app.route('/statuscode', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def status(request):
     return response.text(None, status=int(request.raw_args['status']))
+
+
+@app.route('/zanata', methods=['POST'])
+async def zanata(request):
+    if request.json['type'] == 'DocumentMilestoneEvent':
+        embed = {
+            'title': request.json['milestone'],
+            'type': 'rich',
+            'description': 'Language: ' + request.json['locale'] + '\n' + 'Version: ' + request.json['version'],
+            'color': 0x22ee5b
+        }
+    elif request.json['type'] == 'DocumentStatsEvent':
+        embed = {
+            'title': f'{request.json["username"]} updated {request.json["locale"]}',
+            'type': 'rich',
+            'description': 'Version: ' + request.json['version'],
+            'color': 0xd990e9
+        }
+    elif request.json['type'] == 'SourceDocumentChangedEvent':
+        embed = {
+            'title': 'Documents added',
+            'type': 'rich',
+            'description': 'Version: ' + request.json['version'],
+            'color': 0x56beee
+        }
+    else:
+        return response.json({'status': 'invalid type'}, status=400)
+    await app.session.post(os.getenv('zanatahook'), json=embed)
+    return response.json(None, status=204)
 
 
 if __name__ == '__main__':
