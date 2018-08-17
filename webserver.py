@@ -211,7 +211,7 @@ async def statsy_dbl(request):
         else:
             return response.json({'status': 'you already did this'}, status=400)
     else:
-        return response.json({'message': 'stop trying'}, statius=400)
+        return response.json({'message': 'stop trying'}, status=400)
 
 
 @app.route('/statsy/tournament', methods=['POST'])
