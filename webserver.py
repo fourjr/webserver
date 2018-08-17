@@ -130,12 +130,14 @@ def get_random_status():
 
 
 async def set_session():
-    app.session = aiohttp.ClientSession(loop=loop)
+    app.session = aiohttp.ClientSession(loop=asyncio.get_event_loop())
 
 
 @app.listener('before_server_start')
 async def create_session(app, loop):
     '''Creates an aiohttp.ClientSession upon app connect'''
+    await app.session.close()
+    app.session = aiohttp.ClientSession(loop=asyncio.get_event_loop())
     loop.create_task(update_constants('clashroyale'))
     loop.create_task(update_constants('brawlstars'))
 
