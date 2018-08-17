@@ -220,7 +220,7 @@ async def statsy_dbl(request):
 async def statsy_tournament(request):
     if request.headers.get('Authorization') == os.getenv('statsytournamentauth'):
         async with app.session.post(
-            os.getenv('statsytournamenthook'), json={'content': f"{request.json['tag']} {request.json['filters']}"}
+            os.getenv('statsytournamenthook'), json={'content': f"{request.json['tag']} {json.dumps(request.json['filters'])}"}
         ) as resp:
             return response.json({'status': resp.status}, status=resp.status)
     else:
