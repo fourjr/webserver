@@ -222,7 +222,7 @@ async def statsy_tournament(request):
         ) as resp:
             return response.json({'status': resp.status}, status=resp.status)
     else:
-        return response.json({'message': 'stop trying'}, statius=400)
+        return response.json({'message': 'stop trying'}, status=400)
 
 
 @app.route('/redirect')
