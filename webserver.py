@@ -79,18 +79,18 @@ async def update_constants(mode, once=False):
             'royaleapi',
             'cr-api-data',
             [
-                "alliance_badges",
-                "arenas",
-                "cards",
-                "cards_stats",
-                "challenges",
-                "chest_order",
-                "clan_chest",
-                "game_modes",
-                "rarities",
-                "regions",
-                "tournaments",
-                "treasure_chests"
+                "alliance_badges.json",
+                "arenas.json",
+                "cards.json",
+                "cards_stats.json",
+                "challenges.json",
+                "chest_order.json",
+                "clan_chest.json",
+                "game_modes.json",
+                "rarities.json",
+                "regions.json",
+                "tournaments.json",
+                "treasure_chests.json"
             ]
         ]
     else:
