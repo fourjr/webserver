@@ -248,10 +248,22 @@ async def cr_constants(request):
     return response.json(app.constants['clashroyale'])
 
 
+@app.route('/cr/constants/<key>')
+async def cr_constants_key(request, key):
+    '''Retrieve constants from cr-data'''
+    return response.json(app.constants['clashroyale'][key])
+
+
 @app.route('/bs/constants')
 async def bs_constants(request):
     '''Retrieve constants from bs-data'''
     return response.json(app.constants['brawlstars'])
+
+
+@app.route('/bs/constants/<key>')
+async def bs_constants_key(request, key):
+    '''Retrieve constants from cr-data'''
+    return response.json(app.constants['brawlstars'][key])
 
 
 @app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
