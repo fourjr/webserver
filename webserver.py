@@ -71,7 +71,8 @@ async def update_constants(mode, once=False):
                 "campaign.json",
                 "skinsrarity.json",
                 "texts.json",
-                "player_badges.json"
+                "alliance_badges_readable.json",
+                "milestones.json"
             ]
         ]
     elif mode == 'clashroyale':
