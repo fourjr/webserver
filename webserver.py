@@ -36,43 +36,7 @@ async def update_constants(mode, once=False):
             'fourjr',
             'bs-data',
             [
-                "animations.json",
-                "billing_packages.json",
-                "client_globals.json",
-                "credits.json",
-                "effects.json",
-                "faces.json",
-                "health_bars.json",
-                "hints.json",
-                "music.json",
-                "particle_emitters.json",
-                "sounds.json",
-                "tutorial.json",
-                "cards.json",
-                "characters.json",
-                "globals.json",
-                "items.json",
-                "locales.json",
-                "locations.json",
-                "map_blocks.json",
-                "maps.json",
-                "pins.json",
-                "player_thumbnails.json",
-                "projectiles.json",
-                "regions.json",
-                "resources.json",
-                "skills.json",
-                "skins.json",
-                "tiles.json",
-                "alliance_badges.json",
-                "alliance_roles.json",
-                "area_effects.json",
-                "bosses.json",
-                "campaign.json",
-                "skinsrarity.json",
-                "texts.json",
-                "alliance_badges_readable.json",
-                "milestones.json"
+                'all.json'
             ]
         ]
     elif mode == 'clashroyale':
@@ -109,8 +73,12 @@ async def update_constants(mode, once=False):
         }
 
         for i in url[2]:
-            async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
-                output[i.replace('.json', '')] = await z.json(content_type='text/plain')
+            if url[0] == 'fourjr':
+                async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/{i}') as z:
+                    output.update(await z.json(content_type='text/plain'))
+            else:
+                async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
+                    output[i.replace('.json', '')] = await z.json(content_type='text/plain')
 
         app.constants[mode] = output
 
