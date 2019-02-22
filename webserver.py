@@ -30,13 +30,31 @@ app.storage = {
 
 async def update_constants(mode, once=False):
     '''Updates constants for /*/constants'''
-    # print(__import__('json').dumps(__import__('os').listdir('../bs-data/json'), indent=4))
+    # print(__import__('json').dumps([f'{i}/all.json' for i in __import__('os').listdir('../bs-data/json')], indent=4))
     if mode == 'brawlstars':
         url = [
             'fourjr',
             'bs-data',
             [
-                'json/en/all.json'
+                "ar/all.json",
+                "cn/all.json",
+                "cnt/all.json",
+                "de/all.json",
+                "es/all.json",
+                "fi/all.json",
+                "fr/all.json",
+                "id/all.json",
+                "it/all.json",
+                "jp/all.json",
+                "kr/all.json",
+                "ms/all.json",
+                "nl/all.json",
+                "pt/all.json",
+                "ru/all.json",
+                "en/all.json",
+                "th/all.json",
+                "tr/all.json",
+                "vi/all.json"
             ]
         ]
     elif mode == 'clashroyale':
@@ -73,12 +91,8 @@ async def update_constants(mode, once=False):
         }
 
         for i in url[2]:
-            if url[0] == 'fourjr':
-                async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/{i}') as z:
-                    output.update(await z.json(content_type='text/plain'))
-            else:
-                async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
-                    output[i.replace('.json', '')] = await z.json(content_type='text/plain')
+            async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
+                output[i.split('/')[0].replace('.json', '')] = await z.json(content_type='text/plain')
 
         app.constants[mode] = output
 
@@ -159,13 +173,21 @@ async def cr_constants_key(request, key):
 @app.route('/bs/constants')
 async def bs_constants(request):
     '''Retrieve constants from bs-data'''
-    return response.json(app.constants['brawlstars'])
+    language = request.raw_args.get('lang', 'en')
+    try:
+        return response.json(app.constants['brawlstars'][language])
+    except KeyError:
+        return response.text('No such langauage')
 
 
 @app.route('/bs/constants/<key>')
 async def bs_constants_key(request, key):
-    '''Retrieve constants from cr-data'''
-    return response.json(app.constants['brawlstars'][key])
+    '''Retrieve constants from bs-data'''
+    language = request.raw_args.get('lang', 'en')
+    try:
+        return response.json(app.constants['brawlstars'][language][key])
+    except KeyError:
+        return response.text('No such langauage (or no such key)')
 
 
 @app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
