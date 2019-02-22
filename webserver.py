@@ -36,7 +36,7 @@ async def update_constants(mode, once=False):
             'fourjr',
             'bs-data',
             [
-                'all.json'
+                'json/en/all.json'
             ]
         ]
     elif mode == 'clashroyale':
