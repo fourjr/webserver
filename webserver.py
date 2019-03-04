@@ -5,6 +5,7 @@ import random
 import datetime
 
 import aiohttp
+from bs4 import BeautifulSoup
 from sanic import Sanic, response
 
 try:
@@ -261,33 +262,44 @@ async def status(request):
     return response.text(None, status=int(request.raw_args['status']))
 
 
-@app.route('/zanata', methods=['POST'])
-async def zanata(request):
-    if request.json['type'] == 'DocumentMilestoneEvent':
-        embed = {
-            'title': request.json['milestone'],
-            'type': 'rich',
-            'description': 'Language: ' + request.json['locale'] + '\n' + 'Version: ' + request.json['version'],
-            'color': 0x22ee5b
-        }
-    elif request.json['type'] == 'DocumentStatsEvent':
-        embed = {
-            'title': f'{request.json["username"]} updated {request.json["locale"]}',
-            'type': 'rich',
-            'description': 'Version: ' + request.json['version'],
-            'color': 0xd990e9
-        }
-    elif request.json['type'] == 'SourceDocumentChangedEvent':
-        embed = {
-            'title': 'Documents added',
-            'type': 'rich',
-            'description': 'Version: ' + request.json['version'],
-            'color': 0x56beee
-        }
-    else:
-        return response.json({'status': 'invalid type'}, status=400)
-    await app.session.post(os.getenv('zanatahook'), json=embed)
-    return response.json(None, status=204)
+@app.route('/playstore/<package>')
+async def playstore(request, package):
+    def fix_br(soup):
+        for br in soup.find_all("br"):
+            br.replace_with("\n")
+        return soup.getText()
+
+    def space_to_camel(text):
+        first, *rest = text.lower().replace('-', ' ').split(' ')
+        return first + ''.join(word.capitalize() for word in rest)
+
+    async with app.session.get(f'https://play.google.com/store/apps/details?id={package}&hl=en', headers={'User-Agent': 'Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6'}) as resp:
+        soup = BeautifulSoup(await resp.text(), 'html.parser')
+
+    description, changelog = soup.select('div.PHBdkd > div.DWPxHb')
+
+    logo, _, video, dev_cover_art = [i['src'] for i in soup.select('div > div > img')]
+
+    result = {
+        'name': soup.find('meta', attrs={'property': 'og:title'})['content'].split('-')[0].strip(),
+        'package': package,
+        'description': fix_br(description),
+        'changelog': fix_br(changelog),
+        'logo': logo,
+        'developerCoverArt': dev_cover_art,
+        'images': [i.get('data-src') for i in soup.find_all('img', attrs={'alt': 'Screenshot Image'}) if i.get('data-src')],
+        'video': 'https://youtu.be/' + video.split('/')[-2],
+        'metadata': {}
+    }
+
+    # add metadata
+
+    keys = [space_to_camel(i.getText()) for i in soup.select('div.hAyfc > div.BgcNfc')]
+
+    values = ['\n'.join([getattr(i, 'getText', lambda: i)() for i in i.children]) for i in soup.select('span.htlgb > div.IQ1z0d > span.htlgb')]
+    result['metadata'].update(dict(zip(keys, values)))
+
+    return response.json(result)
 
 
 if __name__ == '__main__':
