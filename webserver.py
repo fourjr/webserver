@@ -235,6 +235,32 @@ async def statsy_tournament(request):
         return response.json({'message': 'stop trying'}, status=400)
 
 
+@app.route('/brawlapi/event', methods=['POST'])
+async def handle_event(request):
+    ems = []
+    for i in range(len(request.json['old'])):
+        ems.append({
+            'title': f'Old event ({i})',
+            'color': 0xfdbd24,
+            'description': f"```json\n{request.json['old'][i]}\n```"
+        })
+
+    for i in range(len(request.json['new'])):
+        ems.append({
+            'title': f'New event ({i})',
+            'color': 0xfdbd24,
+            'description': f"```json\n{request.json['new'][i]}\n```"
+        })
+
+    async with app.session.post(
+        'https://canary.discordapp.com/api/webhooks/541259235577692171/wXldVVmzSDwRYHwkTQTrjmg8AVPxR1ToQjrunoNrYkAedJdYIIEJug2q1YFeURoNl_fP',
+        json={
+            'embeds': ems
+        }
+    ) as resp:
+        return response.json({'status': resp.status}, status=resp.status)
+
+
 @app.route('/redirect')
 async def redirect(request):
     return response.redirect(request.raw_args['url'])
