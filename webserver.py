@@ -58,6 +58,14 @@ async def update_constants(mode, once=False):
                 "vi/all.json"
             ]
         ]
+    elif mode == 'rushwars':
+        url = [
+            'fourjr',
+            'rw-data',
+            [
+                "en/all.json"
+            ]
+        ]
     elif mode == 'clashroyale':
         url = [
             'royaleapi',
@@ -179,8 +187,7 @@ async def bs_constants(request):
         return response.json(app.constants['brawlstars'][language])
     except KeyError:
         return response.text('No such langauage')
-
-
+  
 @app.route('/bs/constants/<key>')
 async def bs_constants_key(request, key):
     '''Retrieve constants from bs-data'''
@@ -190,6 +197,24 @@ async def bs_constants_key(request, key):
     except KeyError:
         return response.text('No such langauage (or no such key)')
 
+
+@app.route('/rw/constants')
+async def bs_constants(request):
+    '''Retrieve constants from rw-data'''
+    language = request.raw_args.get('lang', 'en')
+    try:
+        return response.json(app.constants['rushwars'][language])
+    except KeyError:
+        return response.text('No such langauage')
+  
+@app.route('/rw/constants/<key>')
+async def bs_constants_key(request, key):
+    '''Retrieve constants from rw-data'''
+    language = request.raw_args.get('lang', 'en')
+    try:
+        return response.json(app.constants['rushwars'][language][key])
+    except KeyError:
+        return response.text('No such langauage (or no such key)')
 
 @app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
