@@ -358,4 +358,5 @@ if __name__ == '__main__':
     loop.run_until_complete(set_session())
     loop.run_until_complete(update_constants('brawlstars', once=True))
     loop.run_until_complete(update_constants('clashroyale', once=True))
+    loop.run_until_complete(update_constants('rushwars', once=True))
     app.run(host="0.0.0.0", port=os.getenv('PORT'))
