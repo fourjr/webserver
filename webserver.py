@@ -327,7 +327,12 @@ async def playstore(request, package):
     async with app.session.get(f'https://play.google.com/store/apps/details?id={package}&hl=en', headers={'User-Agent': 'Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6'}) as resp:
         soup = BeautifulSoup(await resp.text(), 'html.parser')
 
-    description, changelog = soup.select('div.PHBdkd > div.DWPxHb')
+    dcl = soup.select('div.PHBdkd > div.DWPxHb')
+    description = dcl[0]
+    if len(dcl) > 1:
+        changelog = dcl[1]
+    else:
+        changelog = None
 
     logo, _, video, dev_cover_art = [i['src'] for i in soup.select('div > div > img')]
 
