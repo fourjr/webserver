@@ -316,9 +316,10 @@ async def status(request):
 @app.route('/playstore/<package>')
 async def playstore(request, package):
     def fix_br(soup):
-        for br in soup.find_all("br"):
-            br.replace_with("\n")
-        return soup.getText()
+        if soup:
+            for br in soup.find_all("br"):
+                br.replace_with("\n")
+            return soup.getText()
 
     def space_to_camel(text):
         first, *rest = text.lower().replace('-', ' ').split(' ')
