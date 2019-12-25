@@ -6,7 +6,7 @@ import datetime
 
 import aiohttp
 from bs4 import BeautifulSoup
-from sanic import Sanic, response
+from sanic import Sanic, response, exceptions
 
 try:
     with open('config.json') as f:
@@ -219,10 +219,15 @@ async def bs_constants_key(request, key):
 @app.route('/debug', methods=['GET', 'PUT', 'POST', 'GET', 'DELETE', 'PATCH'])
 async def debug(request):
     '''Returns and prints to stdout a JSON object about the request'''
+    try:
+        json_data = request.json
+    except exceptions.InvalidUsage:
+        json_data = None
+
     debug_json = {
         'method': request.method,
         'url': request.url,
-        'json': request.json,
+        'json': json_data,
         'params': request.raw_args,
         'form': request.form,
         'body': request.body,
