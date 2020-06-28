@@ -101,7 +101,10 @@ async def update_constants(mode, once=False):
 
         for i in url[2]:
             async with app.session.get(f'https://raw.githubusercontent.com/{url[0]}/{url[1]}/master/json/{i}') as z:
-                output[i.split('/')[0].replace('.json', '')] = await z.json(content_type='text/plain')
+                try:
+                    output[i.split('/')[0].replace('.json', '')] = await z.json(content_type='text/plain')
+                except json.JSONDecodeError:
+                    output[i.split('/')[0].replace('.json', '')] = None
 
         app.constants[mode] = output
 
